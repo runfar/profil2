@@ -55,11 +55,16 @@ jobs:
             sed -i "s/__DEMO_SECRET__/(설정되지 않음)/" src/app/app.html
           fi
 
-      - name: Build
-        run: npx ng build --configuration production
-
       - name: Setup Pages
+        id: pages
         uses: actions/configure-pages@v5
+
+      # GitHub Pages 프로젝트 페이지는 https://<user>.github.io/<repo>/ 처럼
+      # 하위 경로에서 서빙되는데, Angular 빌드 기본값은 <base href="/"> 라서
+      # 그대로 두면 JS/CSS 를 도메인 루트에서 찾다가 404가 납니다.
+      # configure-pages 가 알려주는 실제 base path(예: /profil2/)를 --base-href 로 넘겨줍니다.
+      - name: Build
+        run: npx ng build --configuration production --base-href "${{ steps.pages.outputs.base_path }}/"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

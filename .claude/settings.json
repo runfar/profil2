@@ -16,7 +16,8 @@
       "Bash(npm init *)",
       "Bash(node check.mjs)",
       "Bash(pkill -f \"ng serve\")",
-      "Bash(rm -f /tmp/ng-serve.log)"
+      "Bash(rm -f /tmp/ng-serve.log)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }
