@@ -2,7 +2,21 @@
   "permissions": {
     "allow": [
       "Bash(curl -sI https://runfar.github.io/profil2/)",
-      "Bash(curl -s https://runfar.github.io/profil2/)"
+      "Bash(curl -s https://runfar.github.io/profil2/)",
+      "Bash(npm -v)",
+      "Bash(npx --yes @angular/cli@20 version)",
+      "Bash(rm -rf ng-scaffold)",
+      "Bash(npx --yes @angular/cli@20 new ng-scaffold --directory ng-scaffold --routing=false --style=css --ssr=false --skip-git --package-manager=npm --skip-install)",
+      "Bash(npx ng *)",
+      "Bash(python3 -c ' *)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(chromium-cli --session profil2)",
+      "Bash(npx --yes playwright --version)",
+      "Bash(npm init *)",
+      "Bash(node check.mjs)",
+      "Bash(pkill -f \"ng serve\")",
+      "Bash(rm -f /tmp/ng-serve.log)"
     ]
   }
 }
