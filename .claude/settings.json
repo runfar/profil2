@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sI https://runfar.github.io/profil2/)",
+      "Bash(curl -s https://runfar.github.io/profil2/)"
+    ]
+  }
+}
