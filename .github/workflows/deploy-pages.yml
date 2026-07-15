@@ -25,6 +25,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # GitHub Secret 사용 예시:
+      # 1) 저장소 Settings > Secrets and variables > Actions 에서
+      #    이름이 DEMO_SECRET 인 시크릿을 하나 만들어 보세요 (값은 아무 문자열이나 OK).
+      # 2) 아래 스텝처럼 secrets.DEMO_SECRET 으로 참조하면 값이 로그에 그대로 찍히지 않고
+      #    자동으로 "***" 로 마스킹되는 것을 Actions 실행 로그에서 확인할 수 있습니다.
+      # 3) 시크릿을 만들지 않았다면 이 스텝은 안내 메시지만 출력하고 넘어갑니다.
+      - name: GitHub Secret 동작 확인 (예시)
+        env:
+          DEMO_SECRET: ${{ secrets.DEMO_SECRET }}
+        run: |
+          if [ -n "$DEMO_SECRET" ]; then
+            echo "DEMO_SECRET 길이: ${#DEMO_SECRET}자"
+            echo "DEMO_SECRET 값(자동 마스킹됨): $DEMO_SECRET"
+          else
+            echo "DEMO_SECRET 시크릿이 설정되어 있지 않습니다."
+            echo "Settings > Secrets and variables > Actions 에서 추가해 보세요."
+          fi
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
