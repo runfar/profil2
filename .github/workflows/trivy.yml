@@ -1,0 +1,49 @@
+name: Trivy Security Scan
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    # 매주 월요일 09:00 KST(00:00 UTC) 정기 스캔 — 새로 공개된 CVE를 주기적으로 잡습니다.
+    - cron: "0 0 * * 1"
+
+permissions:
+  contents: read
+  security-events: write # SARIF 결과를 Security 탭(Code scanning)에 업로드하기 위함
+
+jobs:
+  scan:
+    name: Trivy filesystem scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 취약점(vuln) + 시크릿(secret) + 설정오류(misconfig)를 파일시스템 기준으로 스캔합니다.
+      # 결과는 SARIF로 내보내 GitHub Security 탭에 표시합니다.
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH,MEDIUM
+          ignore-unfixed: false
+        env:
+          # DB 다운로드 rate limit 회피를 위해 GitHub 토큰을 전달합니다.
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() # 스캔이 실패해도 생성된 결과가 있으면 업로드 시도
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy
