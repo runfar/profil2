@@ -27,7 +27,7 @@ jobs:
       # 취약점(vuln) + 시크릿(secret) + 설정오류(misconfig)를 파일시스템 기준으로 스캔합니다.
       # 결과는 SARIF로 내보내 GitHub Security 탭에 표시합니다.
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
