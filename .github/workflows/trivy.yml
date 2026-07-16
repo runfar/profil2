@@ -47,3 +47,75 @@ jobs:
         with:
           sarif_file: trivy-results.sarif
           category: trivy
+
+# =============================================================================
+# [Private 레포용 대체 버전]
+# 위 워크플로는 결과를 Security 탭(Code scanning)에 업로드합니다. 그런데
+# Private 레포에서 Code scanning(SARIF 업로드)은 GitHub Advanced Security(GHAS)가
+# 켜져 있어야만 동작하며, 없으면 upload-sarif 스텝에서
+# "Resource not accessible by integration" (403) 오류가 납니다.
+#
+# GHAS를 켤 수 없는 Private 레포라면, 아래 버전으로 통째로 교체해서 사용하세요.
+# - Security 탭에 올리지 않고 결과를 잡 로그(표)와 아티팩트로 확인합니다.
+# - security-events: write 권한이 필요 없어 403이 발생하지 않습니다.
+# - HIGH/CRITICAL 발견 시 워크플로를 실패시킵니다(원치 않으면 exit-code를 "0"으로).
+# =============================================================================
+#
+# name: Trivy Security Scan
+#
+# on:
+#   push:
+#     branches: [main]
+#   pull_request:
+#     branches: [main]
+#   workflow_dispatch:
+#   schedule:
+#     - cron: "0 0 * * 1"
+#
+# # Security 탭에 안 올리므로 security-events 권한 불필요
+# permissions:
+#   contents: read
+#
+# jobs:
+#   scan:
+#     name: Trivy filesystem scan
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#
+#       # 1) 사람이 보기 좋은 표로 로그에 출력 + 취약점 있으면 실패(exit 1)
+#       - name: Run Trivy (table, fail on HIGH/CRITICAL)
+#         uses: aquasecurity/trivy-action@v0.36.0
+#         with:
+#           scan-type: fs
+#           scan-ref: .
+#           scanners: vuln,secret,misconfig
+#           format: table
+#           severity: CRITICAL,HIGH
+#           exit-code: "1"        # 발견 시 워크플로 실패
+#           ignore-unfixed: false
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#
+#       # 2) 기록용 SARIF 생성 (실패해도 항상 실행)
+#       - name: Run Trivy (sarif artifact)
+#         if: always()
+#         uses: aquasecurity/trivy-action@v0.36.0
+#         with:
+#           scan-type: fs
+#           scan-ref: .
+#           scanners: vuln,secret,misconfig
+#           format: sarif
+#           output: trivy-results.sarif
+#           severity: CRITICAL,HIGH,MEDIUM
+#           exit-code: "0"
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#
+#       - name: Upload SARIF as artifact
+#         if: always()
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: trivy-results
+#           path: trivy-results.sarif
