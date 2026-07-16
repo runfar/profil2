@@ -1,0 +1,78 @@
+name: Deploy to Azure Static Web Apps
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened, closed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write # PR 프리뷰 URL 코멘트용
+
+concurrency:
+  group: "azure-swa-${{ github.event.pull_request.number || 'main' }}"
+  cancel-in-progress: true
+
+jobs:
+  build_and_deploy:
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # deploy-pages.yml 과 동일한 데모용 시크릿 치환 스텝입니다.
+      # (데모용 sed 치환이라 값에 '/' 같은 문자가 있으면 깨질 수 있으니, 테스트 값은 영숫자로 간단하게 넣어보세요.)
+      - name: GitHub Secret 동작 확인 (예시)
+        env:
+          DEMO_SECRET: ${{ secrets.DEMO_SECRET }}
+        run: |
+          if [ -n "$DEMO_SECRET" ]; then
+            echo "DEMO_SECRET 길이: ${#DEMO_SECRET}자"
+            echo "DEMO_SECRET 값(자동 마스킹됨): $DEMO_SECRET"
+            sed -i "s/__DEMO_SECRET__/$DEMO_SECRET/" src/app/app.html
+          else
+            echo "DEMO_SECRET 시크릿이 설정되어 있지 않습니다."
+            echo "Settings > Secrets and variables > Actions 에서 추가해 보세요."
+            sed -i "s/__DEMO_SECRET__/(설정되지 않음)/" src/app/app.html
+          fi
+
+      # Azure Static Web Apps 는 루트(/)에서 서빙되므로
+      # GitHub Pages 와 달리 --base-href 를 넘기지 않습니다 (index.html 기본값 "/" 사용).
+      - name: Build
+        run: npx ng build --configuration production
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: dist/profil2/browser
+          output_location: ""
+          skip_app_build: true
+
+  # PR 이 닫히면 해당 PR 의 스테이징 환경을 정리합니다.
+  close_pr_environment:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close staging environment
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: close
